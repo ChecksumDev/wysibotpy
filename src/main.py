@@ -2,8 +2,10 @@ import asyncio
 
 from modules.bot import Client
 from utilities.config import get_config
+from loguru import logger
 
 
+@logger.catch
 async def main():
     await client.start()
 

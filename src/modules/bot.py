@@ -65,7 +65,6 @@ class Client:
     async def on_ready(self, event: EventData):
         logger.success("Successfully connected to Twitch")
 
-    @logger.catch
     async def on_score(self, message: str):
         score: dict = json.loads(message)
         player: dict = score.get("player")
