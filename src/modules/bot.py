@@ -19,7 +19,7 @@ from utilities.tools import dysi, extract_socials, get_username
 class Client:
     def __init__(self, config: ConfigParser):
         self.config = config
-        self.scopes = [scope for scope in AuthScope]
+        self.scopes = list(AuthScope)
         self.client = ClientSession()
         self.ws = PersistentWebsocket(
             "wss://api.beatleader.xyz/scores", on_message=self.on_score)
