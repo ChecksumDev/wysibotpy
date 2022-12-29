@@ -1,4 +1,5 @@
 import asyncio
+import contextlib
 import json
 from configparser import ConfigParser
 
@@ -86,7 +87,7 @@ class Client:
             player["socials"])
 
         clip_link = None
-        reaction_clip = None
+        rclip_link = None
         replay_url = f'https://replay.beatleader.xyz/?scoreId={score["id"]}'
 
         if twitch_link is not None:
@@ -115,6 +116,9 @@ class Client:
             twitter_user = await self.twitter.get_user(
                 username=get_username(twitter_link))
 
+            with contextlib.suppress(Exception):
+                await self.twitter.follow_user(twitter_user.data.id)
+
             display_name = f"@{twitter_user.data.username}"
 
         await self.twitter.create_tweet(text=f"{display_name} just got a {accuracy}% on {song['name']} ({leaderboard['difficulty']['difficultyName']}) by {song['author']}! {replay_url} {clip_link or twitch_link or ''}")
@@ -125,6 +129,7 @@ class Client:
         if clip_link is not None:
             # First clip worked, second one will also likely work.
             await asyncio.sleep(25)
-            reaction_clip = await self.twitch.create_clip(user.id)
+            clip_resp = await self.twitch.create_clip(user.id)
+            rclip_link = f"https://clips.twitch.tv/{clip_resp.id}"
 
-        await send_webhook(self.config, player.get("name"), accuracy, song.get("name"), song.get("author"), leaderboard.get('difficulty').get('difficultyName'), replay_url, twitter_link, twitch_link, clip_link, reaction_clip, song.get("coverImage"), player.get("avatar"))
+        await send_webhook(self.config, player.get("name"), accuracy, song.get("name"), song.get("author"), leaderboard.get('difficulty').get('difficultyName'), replay_url, twitter_link, twitch_link, clip_link, rclip_link, song.get("coverImage"), player.get("avatar"))
