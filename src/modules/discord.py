@@ -11,7 +11,7 @@ async def send_webhook(config: ConfigParser, player_name: str, accuracy: float, 
         "fields": [
             {
                 "name": "Information",
-                "value": f"**Player**: {player_name}\n**Accuracy**: {accuracy}\n\n**Map**: {song_name} by {song_author} ({diff})\n**Replay**: {replay_url}"
+                "value": f"**Player**: {player_name}\n**Accuracy**: {accuracy}%\n\n**Map**: {song_name} by {song_author} ({diff})\n**Replay**: {replay_url}"
             },
             {
                 "name": "Links",
