@@ -1,8 +1,9 @@
 import asyncio
 
+from loguru import logger
+
 from modules.bot import Client
 from utilities.config import get_config
-from loguru import logger
 
 
 @logger.catch
