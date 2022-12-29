@@ -103,7 +103,7 @@ class Client:
                     try:
                         clip_resp = await self.twitch.create_clip(user.id)
                         clip_link = f"https://clips.twitch.tv/{clip_resp.id}"
-                    except:
+                    except Exception:
                         logger.warning(
                             f"Tried to create a clip for {user.display_name} but was unable too.")
 
