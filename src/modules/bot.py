@@ -121,8 +121,7 @@ class Client:
 
             display_name = f"@{twitter_user.data.username}"
 
-        tweet = await self.twitter.create_tweet(text=f"{display_name} just got a {accuracy}% on {song['name']} ({leaderboard['difficulty']['difficultyName']}) by {song['author']}! {replay_url} {clip_link or twitch_link or ''}")
-        await self.twitter.like(tweet.data.id)
+        await self.twitter.create_tweet(text=f"{display_name} just got a {accuracy}% on {song['name']} ({leaderboard['difficulty']['difficultyName']}) by {song['author']}! {replay_url} {clip_link or twitch_link or ''}")
 
         logger.success(
             f"{display_name} just got a {accuracy}% on {song['name']} ({leaderboard.get('difficulty').get('difficultyName')}) by {song['author']}! {replay_url} {clip_link or twitch_link or ''}")
