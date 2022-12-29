@@ -3,3 +3,5 @@ loguru==0.6.0
 tweepy==4.12.1
 twitchAPI==3.2.1
 websockets==10.4
+oauthlib==3.2.2
+async_lru==1.0.3
