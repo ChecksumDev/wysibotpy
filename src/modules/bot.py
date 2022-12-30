@@ -24,7 +24,7 @@ class Client:
         self.scopes = list(AuthScope)
         self.client = ClientSession()
         self.ws = PersistentWebSocket(
-            "wss://api.beatleader.xyz/scores", None, self.on_score, None)
+            "wss://api.beatleader.xyz/scores", self.on_score)
 
         self.analytics = Analytics()
         self.twitch: Twitch
