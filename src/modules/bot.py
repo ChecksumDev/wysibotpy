@@ -102,6 +102,7 @@ class Client:
             if user is not None:
                 await self.chat.join_room(user.login)
 
+                await asyncio.sleep(20)
                 clip_link = await self.create_clip(user)
 
                 await self.chat.send_message(user.login, f"! WYSI @{user.login} just got a {accuracy}% on {song['name']} by {song['author']} | {clip_link or '(no clip, not live / no perms)'}")
@@ -129,22 +130,20 @@ class Client:
             twitter_user = await self.twitter.get_user(
                 username=get_username(twitter_link))
 
-            with contextlib.suppress(Exception):
-                await self.twitter.follow_user(twitter_user.data.id)
-
             display_name = f"@{twitter_user.data.username}"
         return display_name
 
     async def create_clip(self, user):
         stream = await first(self.twitch.get_streams(user_id=user.id))
-        if stream is not None:
-            await asyncio.sleep(20)
+        if stream is None:
+            return None
 
-            try:
-                clip_resp = await self.twitch.create_clip(user.id)
-                clip_link = f"https://clips.twitch.tv/{clip_resp.id}"
-            except Exception:
-                logger.warning(
-                    f"Tried to create a clip for {user.display_name} but was unable too.")
+        try:
+            clip_resp = await self.twitch.create_clip(user.id)
+            clip_link = f"https://clips.twitch.tv/{clip_resp.id}"
+        except Exception:
+            clip_link = None
+            logger.warning(
+                f"Tried to create a clip for {user.display_name} but was unable too.")
 
         return clip_link
