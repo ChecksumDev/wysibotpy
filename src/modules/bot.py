@@ -12,8 +12,9 @@ from twitchAPI.chat import Chat, ChatEvent, EventData
 from twitchAPI.helper import first
 from twitchAPI.oauth import AuthScope
 
+from modules.analytics import Analytics
 from modules.discord import send_webhook
-from utilities.persistentws import PersistentWebsocket
+from utilities.persistentws import PersistentWebSocket
 from utilities.tools import dysi, extract_socials, get_username
 
 
@@ -22,9 +23,10 @@ class Client:
         self.config = config
         self.scopes = list(AuthScope)
         self.client = ClientSession()
-        self.ws = PersistentWebsocket(
-            "wss://api.beatleader.xyz/scores", on_message=self.on_score)
+        self.ws = PersistentWebSocket(
+            "wss://api.beatleader.xyz/scores", None, self.on_score, None)
 
+        self.analytics = Analytics()
         self.twitch: Twitch
 
     async def start(self):
@@ -55,11 +57,11 @@ class Client:
         self.chat.register_event(ChatEvent.READY, self.on_ready)
 
         self.chat.start()
-        await self.ws.connect()
+        await self.ws.run()
 
     async def shutdown(self):
         logger.info("Shutting down.")
-        await self.ws.close()
+        await self.ws.shutdown()
         await self.client.close()
         self.chat.stop()
 
@@ -74,7 +76,11 @@ class Client:
 
         accuracy = str(round(score.get("accuracy") * 100, 2))
 
+        await self.analytics.send(score)
+
         if not dysi(accuracy):
+            logger.debug(
+                f"{player['name']} just got a {accuracy} on {song['name']} by {song['author']}")
             return
 
         async with self.client.get(f'https://api.beatleader.xyz/player/{player.get("id")}', headers={
@@ -96,21 +102,28 @@ class Client:
             if user is not None:
                 await self.chat.join_room(user.login)
 
-                stream = await first(self.twitch.get_streams(user_id=user.id))
-                if stream is not None:
-                    await asyncio.sleep(20)
-
-                    try:
-                        clip_resp = await self.twitch.create_clip(user.id)
-                        clip_link = f"https://clips.twitch.tv/{clip_resp.id}"
-                    except Exception:
-                        logger.warning(
-                            f"Tried to create a clip for {user.display_name} but was unable too.")
+                clip_link = await self.create_clip(user)
 
                 await self.chat.send_message(user.login, f"! WYSI @{user.login} just got a {accuracy}% on {song['name']} by {song['author']} | {clip_link or '(no clip, not live / no perms)'}")
 
                 await self.chat.leave_room(user.login)
 
+        display_name = await self.get_displayname(player, twitter_link)
+
+        await self.twitter.create_tweet(text=f"{display_name} just got a {accuracy}% on {song['name']} ({leaderboard['difficulty']['difficultyName']}) by {song['author']}! {replay_url} {clip_link or twitch_link or ''}")
+
+        logger.success(
+            f"{display_name} just got a {accuracy}% on {song['name']} ({leaderboard.get('difficulty').get('difficultyName')}) by {song['author']}! {replay_url} {clip_link or twitch_link or ''}")
+
+        # First clip worked, second one will also likely work.
+        if clip_link is not None:
+            await asyncio.sleep(25)
+            clip_resp = await self.create_clip(user.id)
+            rclip_link = f"https://clips.twitch.tv/{clip_resp.id}"
+
+        await send_webhook(self.config, player.get("name"), accuracy, song.get("name"), song.get("author"), leaderboard.get('difficulty').get('difficultyName'), replay_url, twitter_link, twitch_link, clip_link, rclip_link, song.get("coverImage"), player.get("avatar"))
+
+    async def get_displayname(self, player, twitter_link):
         display_name = player["name"]
         if twitter_link is not None:
             twitter_user = await self.twitter.get_user(
@@ -120,16 +133,18 @@ class Client:
                 await self.twitter.follow_user(twitter_user.data.id)
 
             display_name = f"@{twitter_user.data.username}"
+        return display_name
 
-        await self.twitter.create_tweet(text=f"{display_name} just got a {accuracy}% on {song['name']} ({leaderboard['difficulty']['difficultyName']}) by {song['author']}! {replay_url} {clip_link or twitch_link or ''}")
+    async def create_clip(self, user):
+        stream = await first(self.twitch.get_streams(user_id=user.id))
+        if stream is not None:
+            await asyncio.sleep(20)
 
-        logger.success(
-            f"{display_name} just got a {accuracy}% on {song['name']} ({leaderboard.get('difficulty').get('difficultyName')}) by {song['author']}! {replay_url} {clip_link or twitch_link or ''}")
+            try:
+                clip_resp = await self.twitch.create_clip(user.id)
+                clip_link = f"https://clips.twitch.tv/{clip_resp.id}"
+            except Exception:
+                logger.warning(
+                    f"Tried to create a clip for {user.display_name} but was unable too.")
 
-        if clip_link is not None:
-            # First clip worked, second one will also likely work.
-            await asyncio.sleep(25)
-            clip_resp = await self.twitch.create_clip(user.id)
-            rclip_link = f"https://clips.twitch.tv/{clip_resp.id}"
-
-        await send_webhook(self.config, player.get("name"), accuracy, song.get("name"), song.get("author"), leaderboard.get('difficulty').get('difficultyName'), replay_url, twitter_link, twitch_link, clip_link, rclip_link, song.get("coverImage"), player.get("avatar"))
+        return clip_link
