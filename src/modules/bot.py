@@ -11,10 +11,10 @@ from twitchAPI import Twitch
 from twitchAPI.chat import Chat, ChatEvent, EventData
 from twitchAPI.helper import first
 from twitchAPI.oauth import AuthScope
+import websockets
 
 from modules.analytics import Analytics
 from modules.discord import send_webhook
-from utilities.persistentws import PersistentWebSocket
 from utilities.tools import dysi, extract_socials, get_username
 
 
@@ -23,8 +23,6 @@ class Client:
         self.config = config
         self.scopes = list(AuthScope)
         self.client = ClientSession()
-        self.ws = PersistentWebSocket(
-            "wss://api.beatleader.xyz/scores", self.on_score)
 
         self.analytics = Analytics()
         self.twitch: Twitch
@@ -37,6 +35,10 @@ class Client:
             access_token=self.config.get("twitter", "access_token"),
             access_token_secret=self.config.get("twitter", "access_secret"),
         )
+
+        twitter_username = await self.twitter.get_me()
+        logger.success(
+            f"Successfully connected to Twitter as {twitter_username.data.username}")
 
         # Initialize the Twitch API and Chatbot
         self.twitch = await Twitch(
@@ -53,20 +55,26 @@ class Client:
 
         # create chat instance
         self.chat = await Chat(self.twitch)
-
         self.chat.register_event(ChatEvent.READY, self.on_ready)
-
         self.chat.start()
-        await self.ws.run()
+
+        # run the websocket forever
+        async for websocket in websockets.connect("wss://api.beatleader.xyz/scores"):
+            try:
+                while True:
+                    message = await websocket.recv()
+                    await self.on_score(message)
+            except websockets.ConnectionClosed:
+                continue
 
     async def shutdown(self):
         logger.info("Shutting down.")
-        await self.ws.shutdown()
         await self.client.close()
         self.chat.stop()
 
     async def on_ready(self, event: EventData):
-        logger.success("Successfully connected to Twitch")
+        logger.success(
+            f"Successfully connected to Twitch as {event.chat.username}")
 
     async def on_score(self, message: str):
         score: dict = json.loads(message)
