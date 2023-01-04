@@ -115,6 +115,10 @@ class Client:
 
                 await self.chat.send_message(user.login, f"! WYSI @{user.login} just got a {accuracy}% on {song['name']} by {song['author']} | {clip_link or '(no clip, not live / no perms)'}")
 
+                if clip_link is not None:
+                    await asyncio.sleep(25)
+                    rclip_link = await self.create_clip(user.id)
+
                 await self.chat.leave_room(user.login)
 
         display_name = await self.get_displayname(player, twitter_link)
@@ -125,10 +129,6 @@ class Client:
             f"{display_name} just got a {accuracy}% on {song['name']} ({leaderboard.get('difficulty').get('difficultyName')}) by {song['author']}! {replay_url} {clip_link or twitch_link or ''}")
 
         # First clip worked, second one will also likely work.
-        if clip_link is not None:
-            await asyncio.sleep(25)
-            clip_resp = await self.create_clip(user.id)
-            rclip_link = f"https://clips.twitch.tv/{clip_resp.id}"
 
         await send_webhook(self.config, player.get("name"), accuracy, song.get("name"), song.get("author"), leaderboard.get('difficulty').get('difficultyName'), replay_url, twitter_link, twitch_link, clip_link, rclip_link, song.get("coverImage"), player.get("avatar"))
 
