@@ -35,7 +35,7 @@ def init_config():
 
     config.add_section("discord")
 
-    config.set("discord", "webhook", "")
+    config.set("discord", "webhooks", "")
 
     # Save the configuration to a file
     with open("config.ini", "w") as configfile:

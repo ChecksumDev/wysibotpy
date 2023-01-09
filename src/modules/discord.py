@@ -1,4 +1,4 @@
-from configparser import ConfigParser
+from typing import List
 
 from aiohttp import ClientSession
 from loguru import logger
@@ -23,9 +23,17 @@ async def send_webhook(config: ConfigParser, player_name: str, accuracy: float, 
         },
         "thumbnail": {
             "url": player_avatar
+        },
+        "footer": {
+            "text": "Follow @WYSIBotBS on Twitter!",
+            "icon_url": "https://pbs.twimg.com/profile_images/1597812565601656832/8jCBFaqY_200x200.jpg",
+            "link": "https://twitter.com/WYSIBotBS"
         }
     }
 
+    webhooks = config.get("discord", "webhooks").split(",")
+
     async with ClientSession() as session:
-        async with session.post(config.get("discord", "webhook"), json={"embeds": [embed]}) as resp:
-            pass
+        for webhook in webhooks:
+            async with session.post(webhook, json={"embeds": [embed]}) as resp:
+                pass
