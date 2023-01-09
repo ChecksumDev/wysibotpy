@@ -3,6 +3,7 @@ import contextlib
 import json
 from configparser import ConfigParser
 
+import websockets
 from aiohttp.client import ClientSession
 from loguru import logger
 from tweepy.asynchronous import AsyncClient as TwitterClient
@@ -11,7 +12,6 @@ from twitchAPI import Twitch
 from twitchAPI.chat import Chat, ChatEvent, EventData
 from twitchAPI.helper import first
 from twitchAPI.oauth import AuthScope
-import websockets
 
 from modules.analytics import Analytics
 from modules.discord import send_webhook
