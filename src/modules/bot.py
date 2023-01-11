@@ -60,12 +60,14 @@ class Client:
 
         # run the websocket forever
         async for websocket in websockets.connect("wss://api.beatleader.xyz/scores"):
-            try:
-                while True:
-                    message = await websocket.recv()
+            for message in websocket:
+                try:
                     await self.on_score(message)
-            except websockets.ConnectionClosed:
-                continue
+                except Exception:
+                    # ! This will also catch a CTRL+C
+                    # TODO: Create a cleaner way for anti-crash by
+                    # TODO: handling different exceptions.
+                    continue
 
     async def shutdown(self):
         logger.info("Shutting down.")
@@ -134,6 +136,7 @@ class Client:
 
     async def get_displayname(self, player, twitter_link):
         display_name = player["name"]
+
         if twitter_link is not None:
             twitter_user = await self.twitter.get_user(
                 username=get_username(twitter_link))
