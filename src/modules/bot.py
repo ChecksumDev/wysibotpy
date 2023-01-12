@@ -3,7 +3,7 @@ import contextlib
 import json
 from configparser import ConfigParser
 
-import websockets
+import websockets.client
 from aiohttp.client import ClientSession
 from loguru import logger
 from tweepy.asynchronous import AsyncClient as TwitterClient
@@ -59,15 +59,15 @@ class Client:
         self.chat.start()
 
         # run the websocket forever
-        async for websocket in websockets.connect("wss://api.beatleader.xyz/scores"):
-            for message in websocket:
-                try:
-                    await self.on_score(message)
-                except Exception:
-                    # ! This will also catch a CTRL+C
-                    # TODO: Create a cleaner way for anti-crash by
-                    # TODO: handling different exceptions.
-                    continue
+        async for websocket in websockets.client.connect("wss://api.beatleader.xyz/scores"):
+            try:
+                message = await websocket.recv()
+                await self.on_score(message)
+            except Exception:
+                # ! This will also catch a CTRL+C
+                # TODO: Create a cleaner way for anti-crash by
+                # TODO: handling different exceptions.
+                continue
 
     async def shutdown(self):
         logger.info("Shutting down.")
