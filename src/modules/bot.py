@@ -71,6 +71,7 @@ class Client:
                     async with session.post(webhook, json={"content": f"```{e}```"}) as resp:
                         pass
 
+                asyncio.get_event_loop().stop()
                 asyncio.get_event_loop().close()
 
     async def on_ready(self, event: EventData):
