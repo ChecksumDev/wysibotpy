@@ -73,9 +73,9 @@ class Client:
 
     async def shutdown(self):
         logger.info("Shutting down.")
-        await self.client.close()
-        self.chat.stop()
-
+        await self.client.close()    
+        exit(1)
+        
     async def on_ready(self, event: EventData):
         logger.success(
             f"Successfully connected to Twitch as {event.chat.username}")
