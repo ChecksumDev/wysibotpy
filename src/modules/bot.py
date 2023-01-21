@@ -63,11 +63,13 @@ class Client:
             try:
                 message = await websocket.recv()
                 await self.on_score(message)
-            except Exception:
-                # ! This will also catch a CTRL+C
-                # TODO: Create a cleaner way for anti-crash by
-                # TODO: handling different exceptions.
-                continue
+            except Exception as e:
+                    async with ClientSession() as session:
+                        async with session.post(webhook, json={"content": f"```{e}```"}) as resp:
+                            pass
+                    
+                    await shutdown()
+
 
     async def shutdown(self):
         logger.info("Shutting down.")
