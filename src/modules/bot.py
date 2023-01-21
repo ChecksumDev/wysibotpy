@@ -70,7 +70,7 @@ class Client:
                     async with session.post(webhook, json={"content": f"```{e}```"}) as resp:
                         pass
 
-                await shutdown()
+                await self.shutdown()
 
     async def shutdown(self):
         logger.info("Shutting down.")
