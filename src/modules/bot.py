@@ -65,6 +65,7 @@ class Client:
                     message = await websocket.recv()
                     await self.on_score(message)
             except Exception as e:
+                webhook = self.config.get("discord", "exception_webhook")
                 async with ClientSession() as session:
                     async with session.post(webhook, json={"content": f"```{e}```"}) as resp:
                         pass
@@ -73,9 +74,9 @@ class Client:
 
     async def shutdown(self):
         logger.info("Shutting down.")
-        await self.client.close()    
+        await self.client.close()
         exit(1)
-        
+
     async def on_ready(self, event: EventData):
         logger.success(
             f"Successfully connected to Twitch as {event.chat.username}")
