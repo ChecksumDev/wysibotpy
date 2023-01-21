@@ -4,7 +4,7 @@ import json
 import sys
 from configparser import ConfigParser
 
-import websockets.client
+from websockets.client import connect
 from aiohttp.client import ClientSession
 from loguru import logger
 from tweepy.asynchronous import AsyncClient as TwitterClient
@@ -59,20 +59,19 @@ class Client:
         self.chat.register_event(ChatEvent.READY, self.on_ready)
         self.chat.start()
 
-        # run the websocket forever
-        async for websocket in websockets.client.connect("wss://api.beatleader.xyz/scores", ping_interval=5, ping_timeout=60):
+        with connect("wss://api.beatleader.xyz/scores") as ws:
             try:
                 while True:
-                    message = await websocket.recv()
-                    await self.on_score(message)
+                    m = ws.recv()
+                    await self.on_score(m)
             except Exception as e:
                 webhook = self.config.get("discord", "exception_webhook")
+
                 async with ClientSession() as session:
                     async with session.post(webhook, json={"content": f"```{e}```"}) as resp:
                         pass
 
                 asyncio.get_event_loop().stop()
-                asyncio.get_event_loop().close()
 
     async def on_ready(self, event: EventData):
         logger.success(

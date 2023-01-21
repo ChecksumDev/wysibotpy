@@ -14,8 +14,5 @@ if __name__ == "__main__":
     config = get_config()
     client = Client(config)
 
-    try:
-        loop = asyncio.get_event_loop()
-        loop.run_until_complete(main())
-    except (KeyboardInterrupt):
-        loop.run_until_complete(client.shutdown())
+    loop = asyncio.get_event_loop()
+    loop.run_forever(main())
