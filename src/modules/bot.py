@@ -59,7 +59,7 @@ class Client:
         self.chat.start()
 
         # run the websocket forever
-        async for websocket in websockets.client.connect("wss://api.beatleader.xyz/scores"):
+        async for websocket in websockets.client.connect("wss://api.beatleader.xyz/scores", ping_interval=5, ping_timeout=60):
             try:
                 while True:
                     message = await websocket.recv()
@@ -70,11 +70,9 @@ class Client:
                     async with session.post(webhook, json={"content": f"```{e}```"}) as resp:
                         pass
 
-                await self.shutdown()
+                self.shutdown()
 
-    async def shutdown(self):
-        logger.info("Shutting down.")
-        await self.client.close()
+    def shutdown(self):
         exit(1)
 
     async def on_ready(self, event: EventData):
