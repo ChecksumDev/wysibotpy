@@ -88,7 +88,7 @@ class Client:
 
         accuracy = str(round(score.get("accuracy") * 100, 2))
 
-        await self.analytics.send(score)
+        # await self.analytics.send(score)
 
         if not dysi(accuracy):
             logger.debug(
