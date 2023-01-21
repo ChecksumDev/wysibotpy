@@ -61,15 +61,15 @@ class Client:
         # run the websocket forever
         async for websocket in websockets.client.connect("wss://api.beatleader.xyz/scores"):
             try:
-                message = await websocket.recv()
-                await self.on_score(message)
+                while True:
+                    message = await websocket.recv()
+                    await self.on_score(message)
             except Exception as e:
-                    async with ClientSession() as session:
-                        async with session.post(webhook, json={"content": f"```{e}```"}) as resp:
-                            pass
-                    
-                    await shutdown()
+                async with ClientSession() as session:
+                    async with session.post(webhook, json={"content": f"```{e}```"}) as resp:
+                        pass
 
+                await shutdown()
 
     async def shutdown(self):
         logger.info("Shutting down.")
