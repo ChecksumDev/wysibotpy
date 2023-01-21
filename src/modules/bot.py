@@ -59,7 +59,7 @@ class Client:
         self.chat.register_event(ChatEvent.READY, self.on_ready)
         self.chat.start()
 
-        async for websocket in connect("wss://api.beatleader.xyz/scores", ping_interval=5, ping_timeout=None, compression=None):
+        async for websocket in connect("wss://api.beatleader.xyz/scores", ping_interval=None, ping_timeout=None, compression=None):
             try:
                 while True:
                     m = await websocket.recv()
