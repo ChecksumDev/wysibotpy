@@ -1,6 +1,7 @@
 import asyncio
 import contextlib
 import json
+import sys
 from configparser import ConfigParser
 
 import websockets.client
@@ -70,10 +71,7 @@ class Client:
                     async with session.post(webhook, json={"content": f"```{e}```"}) as resp:
                         pass
 
-                self.shutdown()
-
-    def shutdown(self):
-        exit(1)
+                asyncio.get_event_loop().close()
 
     async def on_ready(self, event: EventData):
         logger.success(
