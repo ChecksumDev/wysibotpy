@@ -14,5 +14,4 @@ if __name__ == "__main__":
     config = get_config()
     client = Client(config)
 
-    loop = asyncio.get_event_loop()
-    loop.run_forever(main())
+    asyncio.run(main())

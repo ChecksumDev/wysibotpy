@@ -59,10 +59,10 @@ class Client:
         self.chat.register_event(ChatEvent.READY, self.on_ready)
         self.chat.start()
 
-        with connect("wss://api.beatleader.xyz/scores") as ws:
+        async for websocket in connect("wss://api.beatleader.xyz/scores", ping_interval=5, ping_timeout=None, compression=None):
             try:
                 while True:
-                    m = ws.recv()
+                    m = await websocket.recv()
                     await self.on_score(m)
             except Exception as e:
                 webhook = self.config.get("discord", "exception_webhook")
@@ -71,7 +71,7 @@ class Client:
                     async with session.post(webhook, json={"content": f"```{e}```"}) as resp:
                         pass
 
-                asyncio.get_event_loop().stop()
+                continue
 
     async def on_ready(self, event: EventData):
         logger.success(
