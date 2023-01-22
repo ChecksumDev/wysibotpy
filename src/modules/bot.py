@@ -60,17 +60,23 @@ class Client:
         self.chat.register_event(ChatEvent.READY, self.on_ready)
         self.chat.start()
 
-        async for websocket in connect("wss://api.beatleader.xyz/scores", ping_interval=None, ping_timeout=None, compression=None):
+        async for websocket in connect("wss://api.beatleader.xyz/scores", compression=None):
+            logger.info("Connecting to the websocket...")
+
             try:
                 while True:
                     m = await websocket.recv()
                     await asyncio.ensure_future(self.on_score(m))
+
             except Exception as e:
                 webhook = self.config.get("discord", "exception_webhook")
 
                 async with ClientSession() as session:
                     async with session.post(webhook, json={"content": f"```{e}```"}) as resp:
                         pass
+
+                logger.error(
+                    "An exception occured on the websocket connection:\n{e}")
 
                 continue
 
