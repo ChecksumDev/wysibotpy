@@ -4,7 +4,6 @@ import json
 import sys
 from configparser import ConfigParser
 
-from websockets.client import connect
 from aiohttp.client import ClientSession
 from loguru import logger
 from tweepy.asynchronous import AsyncClient as TwitterClient
@@ -13,6 +12,7 @@ from twitchAPI import Twitch
 from twitchAPI.chat import Chat, ChatEvent, EventData
 from twitchAPI.helper import first
 from twitchAPI.oauth import AuthScope
+from websockets.client import connect
 
 from modules.analytics import Analytics
 from modules.discord import send_webhook
@@ -62,8 +62,12 @@ class Client:
         async for websocket in connect("wss://api.beatleader.xyz/scores", ping_interval=None, ping_timeout=None, compression=None):
             try:
                 while True:
-                    m = await websocket.recv()
-                    await self.on_score(m)
+                    try:
+                        m = await asyncio.wait_for(websocket.recv(), timeout=10)
+                        await self.on_score(m)
+                    except asyncio.TimeoutError:
+                        pass
+
             except Exception as e:
                 webhook = self.config.get("discord", "exception_webhook")
 
