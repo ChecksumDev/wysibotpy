@@ -4,6 +4,7 @@ import json
 import sys
 from configparser import ConfigParser
 
+from websockets.client import connect
 from aiohttp.client import ClientSession
 from loguru import logger
 from tweepy.asynchronous import AsyncClient as TwitterClient
@@ -12,7 +13,6 @@ from twitchAPI import Twitch
 from twitchAPI.chat import Chat, ChatEvent, EventData
 from twitchAPI.helper import first
 from twitchAPI.oauth import AuthScope
-from websockets.client import connect
 
 from modules.analytics import Analytics
 from modules.discord import send_webhook
@@ -23,12 +23,13 @@ class Client:
     def __init__(self, config: ConfigParser):
         self.config = config
         self.scopes = list(AuthScope)
-        self.client = ClientSession()
 
         self.analytics = Analytics()
         self.twitch: Twitch
 
     async def start(self):
+        self.client = ClientSession()
+
         self.twitter = TwitterClient(
             bearer_token=self.config.get("twitter", "bearer_token"),
             consumer_key=self.config.get("twitter", "app_key"),
@@ -62,12 +63,8 @@ class Client:
         async for websocket in connect("wss://api.beatleader.xyz/scores", ping_interval=None, ping_timeout=None, compression=None):
             try:
                 while True:
-                    try:
-                        m = await asyncio.wait_for(websocket.recv(), timeout=10)
-                        await self.on_score(m)
-                    except asyncio.TimeoutError:
-                        pass
-
+                    m = await websocket.recv()
+                    await asyncio.ensure_future(self.on_score(m))
             except Exception as e:
                 webhook = self.config.get("discord", "exception_webhook")
 
@@ -90,7 +87,6 @@ class Client:
         accuracy = str(round(score.get("accuracy") * 100, 2))
 
         # await self.analytics.send(score)
-
         if not dysi(accuracy):
             logger.debug(
                 f"{player['name']} just got a {accuracy} on {song['name']} by {song['author']}")
@@ -132,8 +128,6 @@ class Client:
 
         logger.success(
             f"{display_name} just got a {accuracy}% on {song['name']} ({leaderboard.get('difficulty').get('difficultyName')}) by {song['author']}! {replay_url} {clip_link or twitch_link or ''}")
-
-        # First clip worked, second one will also likely work.
 
         await send_webhook(self.config, player.get("name"), accuracy, song.get("name"), song.get("author"), leaderboard.get('difficulty').get('difficultyName'), replay_url, twitter_link, twitch_link, clip_link, rclip_link, song.get("coverImage"), player.get("avatar"))
 

@@ -6,12 +6,13 @@ from modules.bot import Client
 from utilities.config import get_config
 
 
+config = get_config()
+client = Client(config)
+
+
 @logger.catch
 async def main():
     await client.start()
 
 if __name__ == "__main__":
-    config = get_config()
-    client = Client(config)
-
     asyncio.run(main())
