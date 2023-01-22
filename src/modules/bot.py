@@ -76,7 +76,10 @@ class Client:
                         pass
 
                 logger.error(
-                    "An exception occured on the websocket connection:\n{e}")
+                    "An exception occured on the websocket connection:")
+                logger.error(e)
+
+                await websocket.close()
 
                 continue
 
