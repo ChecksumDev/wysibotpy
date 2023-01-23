@@ -62,7 +62,7 @@ class Client:
 
         current_ws = None
         async for websocket in connect("wss://api.beatleader.xyz/scores", compression=None):
-            logger.info("Connecting to the websocket...")
+            logger.success("Connected to the BeatLeader websocket!")
 
             try:
                 current_ws = websocket
@@ -72,8 +72,9 @@ class Client:
                     await asyncio.ensure_future(self.on_score(message))
 
             except Exception as e:
-                webhook = self.config.get("discord", "exception_webhook")
+                current_ws = None  # Close the websocket connection
 
+                webhook = self.config.get("discord", "exception_webhook")
                 async with ClientSession() as session:
                     async with session.post(webhook, json={"content": f"```{e}```"}) as resp:
                         pass
@@ -81,9 +82,6 @@ class Client:
                 logger.error(
                     "An exception occured on the websocket connection:")
                 logger.error(e)
-
-                current_ws = None
-                continue
 
     async def on_ready(self, event: EventData):
         logger.success(
