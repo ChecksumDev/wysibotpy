@@ -67,8 +67,9 @@ class Client:
             try:
                 current_ws = websocket
 
-                message = await current_ws.recv()
-                await asyncio.ensure_future(self.on_score(message))
+                while current_ws is not None:
+                    message = await current_ws.recv()
+                    await asyncio.ensure_future(self.on_score(message))
 
             except Exception as e:
                 webhook = self.config.get("discord", "exception_webhook")
