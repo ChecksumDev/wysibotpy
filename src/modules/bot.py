@@ -125,7 +125,7 @@ class Client:
 
                 await self.chat.send_message(user.login, f"! WYSI @{user.login} just got a {accuracy}% on {song['name']} by {song['author']} | {clip_link or '(no clip, not live / no perms)'}")
 
-                if clip_link is not None:
+                if clip_link is not None: # Reaction Clip
                     await asyncio.sleep(25)
                     rclip_link = await self.create_clip(user.id)
 
@@ -152,15 +152,18 @@ class Client:
 
     async def create_clip(self, user):
         stream = await first(self.twitch.get_streams(user_id=user.id))
+
         if stream is None:
             return None
 
         try:
-            clip_resp = await self.twitch.create_clip(user.id)
-            clip_link = f"https://clips.twitch.tv/{clip_resp.id}"
+            clip_resp = await self.twitch.create_clip(user.id, has_delay=True)
         except Exception as e:
-            clip_link = None
             logger.warning(
-                f"Tried to create a clip for {user.display_name} but was unable too. {e}")
+                f"Tried to create a clip for {user.display_name} but was unable too.")
+            logger.warning(e)
 
+            return None
+
+        clip_link = f"https://clips.twitch.tv/{clip_resp.id}"
         return clip_link
