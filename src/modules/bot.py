@@ -96,9 +96,10 @@ class Client:
         accuracy = str(round(score.get("accuracy") * 100, 2))
 
         # await self.analytics.send(score)
+        
         if not dysi(accuracy):
-            logger.debug(
-                f"{player['name']} just got a {accuracy} on {song['name']} by {song['author']}")
+            # logger.debug(
+            #     f"{player['name']} just got a {accuracy} on {song['name']} by {song['author']}")
             return
 
         async with self.client.get(f'https://api.beatleader.xyz/player/{player.get("id")}', headers={
