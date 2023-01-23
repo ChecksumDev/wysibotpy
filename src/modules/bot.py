@@ -66,8 +66,9 @@ class Client:
 
             try:
                 current_ws = websocket
-                async for message in websocket:
-                    await asyncio.ensure_future(self.on_score(message))
+
+                message = await current_ws.recv()
+                await asyncio.ensure_future(self.on_score(message))
 
             except Exception as e:
                 webhook = self.config.get("discord", "exception_webhook")
@@ -125,7 +126,7 @@ class Client:
 
                 await self.chat.send_message(user.login, f"! WYSI @{user.login} just got a {accuracy}% on {song['name']} by {song['author']} | {clip_link or '(no clip, not live / no perms)'}")
 
-                if clip_link is not None: # Reaction Clip
+                if clip_link is not None:  # Reaction Clip
                     await asyncio.sleep(25)
                     rclip_link = await self.create_clip(user.id)
 
