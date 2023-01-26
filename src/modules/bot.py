@@ -3,8 +3,8 @@ import contextlib
 import json
 import sys
 from configparser import ConfigParser
+from typing import Optional
 
-from websockets.client import connect
 from aiohttp.client import ClientSession
 from loguru import logger
 from tweepy.asynchronous import AsyncClient as TwitterClient
@@ -13,6 +13,7 @@ from twitchAPI import Twitch
 from twitchAPI.chat import Chat, ChatEvent, EventData
 from twitchAPI.helper import first
 from twitchAPI.oauth import AuthScope
+from websockets.client import connect
 
 from modules.analytics import Analytics
 from modules.discord import send_webhook
@@ -96,7 +97,7 @@ class Client:
         accuracy = str(round(score.get("accuracy") * 100, 2))
 
         # await self.analytics.send(score)
-        
+
         if not dysi(accuracy):
             # logger.debug(
             #     f"{player['name']} just got a {accuracy} on {song['name']} by {song['author']}")
@@ -113,7 +114,9 @@ class Client:
 
         clip_link = None
         rclip_link = None
+
         replay_url = f'https://replay.beatleader.xyz/?scoreId={score["id"]}'
+        display_name = await self.get_displayname(player, twitter_link)
 
         if twitch_link is not None:
             user = await first(self.twitch.get_users(logins=get_username(twitch_link)))
@@ -124,17 +127,17 @@ class Client:
                 await asyncio.sleep(20)
                 clip_link = await self.create_clip(user)
 
+                # Notify Twitch
                 await self.chat.send_message(user.login, f"! WYSI @{user.login} just got a {accuracy}% on {song['name']} by {song['author']} | {clip_link or '(no clip, not live / no perms)'}")
+
+                # Notify Twitter
+                await self.twitter.create_tweet(text=f"#WYSI! {display_name} just got a {accuracy}% on {song['name']} ({leaderboard['difficulty']['difficultyName']}) by {song['author']}! {replay_url} {clip_link or twitch_link or ''}")
 
                 if clip_link is not None:  # Reaction Clip
                     await asyncio.sleep(25)
                     rclip_link = await self.create_clip(user.id)
 
                 await self.chat.leave_room(user.login)
-
-        display_name = await self.get_displayname(player, twitter_link)
-
-        await self.twitter.create_tweet(text=f"#WYSI! {display_name} just got a {accuracy}% on {song['name']} ({leaderboard['difficulty']['difficultyName']}) by {song['author']}! {replay_url} {clip_link or twitch_link or ''}")
 
         logger.success(
             f"{display_name} just got a {accuracy}% on {song['name']} ({leaderboard.get('difficulty').get('difficultyName')}) by {song['author']}! {replay_url} {clip_link or twitch_link or ''}")
@@ -151,7 +154,7 @@ class Client:
             display_name = f"@{twitter_user.data.username}"
         return display_name
 
-    async def create_clip(self, user):
+    async def create_clip(self, user) -> Optional[str]:
         stream = await first(self.twitch.get_streams(user_id=user.id))
 
         if stream is None:
@@ -166,5 +169,4 @@ class Client:
 
             return None
 
-        clip_link = f"https://clips.twitch.tv/{clip_resp.id}"
-        return clip_link
+        return f"https://clips.twitch.tv/{clip_resp.id}"
